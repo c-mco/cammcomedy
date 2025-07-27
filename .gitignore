@@ -1,5 +1,4 @@
-cat <<EOF > .gitignore
-# Go stuff
+# Go build artifacts
 *.exe
 *.out
 *.test
@@ -9,7 +8,5 @@ cat <<EOF > .gitignore
 .idea/
 .DS_Store
 
-# Data
-data/comics.json
-EOF
-
+# Data files
+data/*.json

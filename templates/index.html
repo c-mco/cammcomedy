@@ -2,26 +2,25 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>cammcomedy – Booked Comics</title>
+  <title>{{.Gig.Name}}</title>
   <link rel="stylesheet" href="/static/style.css">
 </head>
 <body>
-  <h1>🎤 cammcomedy</h1>
+  <h1>{{.Gig.Name}}</h1>
+  <p>{{.Gig.Description}}</p>
+  <h2>Add Event</h2>
   <form method="POST">
-    <input name="name" placeholder="Name" required>
     <input name="date" type="date" required>
-    <label><input name="paid" type="checkbox"> Paid</label>
-    <input name="notes" placeholder="Notes">
-    <button type="submit">Add Comic</button>
+    <input name="time" type="time" required>
+    <textarea name="timeline" placeholder="Timeline"></textarea>
+    <button type="submit">Add Event</button>
   </form>
+  <h2>Events</h2>
   <ul>
-    {{range .}}
-    <li>
-      <strong>{{.Name}}</strong> ({{.Date}})
-      {{if .Paid}}✅ Paid{{else}}💸 Unpaid{{end}} – {{.Notes}}
-    </li>
+    {{range .Events}}
+    <li><a href="/event?id={{.ID}}">{{.Date}} {{.Time}}</a></li>
     {{end}}
   </ul>
+  <p><a href="/comics">Manage Comics</a></p>
 </body>
 </html>
-
