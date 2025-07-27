@@ -105,15 +105,33 @@ func indexHandler(w http.ResponseWriter, r *http.Request) {
 
 	tmpl := template.Must(template.ParseFiles("templates/index.html"))
 	var events []Event
+	maxComics := 0
 	for _, e := range db.Events {
 		if e.GigID == 1 {
 			events = append(events, e)
+			if len(e.Comics) > maxComics {
+				maxComics = len(e.Comics)
+			}
 		}
 	}
+
+	comicMap := make(map[int]Comic)
+	for _, c := range db.Comics {
+		comicMap[c.ID] = c
+	}
+
+	headers := []string{"MC", "Headliner"}
+	for i := 2; i < maxComics; i++ {
+		headers = append(headers, "Comic #"+strconv.Itoa(i-1))
+	}
+
 	tmpl.Execute(w, struct {
-		Gig    Gig
-		Events []Event
-	}{db.Gigs[0], events})
+		Gig      Gig
+		Events   []Event
+		ComicMap map[int]Comic
+		Headers  []string
+		Indices  []int
+	}{db.Gigs[0], events, comicMap, headers, makeRange(maxComics)})
 }
 
 // comicsHandler lists comics and allows adding new ones.
@@ -179,6 +197,14 @@ func eventHandler(w http.ResponseWriter, r *http.Request) {
 		Comics   []Comic
 		ComicMap map[int]Comic
 	}{event, db.Comics, comicMap})
+}
+
+func makeRange(n int) []int {
+	r := make([]int, n)
+	for i := 0; i < n; i++ {
+		r[i] = i
+	}
+	return r
 }
 
 func main() {

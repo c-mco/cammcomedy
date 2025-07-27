@@ -16,11 +16,31 @@
     <button type="submit">Add Event</button>
   </form>
   <h2>Events</h2>
-  <ul>
-    {{range .Events}}
-    <li><a href="/event?id={{.ID}}">{{.Date}} {{.Time}}</a></li>
-    {{end}}
-  </ul>
+  <table>
+    <thead>
+      <tr>
+        <th>Event</th>
+        {{range .Headers}}
+        <th>{{.}}</th>
+        {{end}}
+      </tr>
+    </thead>
+    <tbody>
+      {{range .Events}}
+      <tr>
+        <td><a href="/event?id={{.ID}}">{{.Date}} {{.Time}}</a></td>
+        {{range $i := $.Indices}}
+          {{if lt $i (len .Comics)}}
+            {{$comic := index $.ComicMap (index .Comics $i).ComicID}}
+            <td>{{$comic.Name}}</td>
+          {{else}}
+            <td></td>
+          {{end}}
+        {{end}}
+      </tr>
+      {{end}}
+    </tbody>
+  </table>
   <p><a href="/comics">Manage Comics</a></p>
 </body>
 </html>
