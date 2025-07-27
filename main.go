@@ -256,7 +256,6 @@ func eventHandler(w http.ResponseWriter, r *http.Request) {
 			http.Redirect(w, r, r.URL.String(), http.StatusSeeOther)
 			return
 		}
-
 		if lid := r.FormValue("lineup_id"); lid != "" {
 			fee := r.FormValue("fee")
 			paid := 0

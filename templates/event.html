@@ -9,10 +9,10 @@
 <body>
 <h1>{{.Event.Name}}</h1>
 <h2>Add Performer</h2>
-<form method="POST" class="horizontal">
-  <select name="comic_id">
+<form method="POST" class="horizontal" id="addLineupForm">
+  <select name="comic_id" id="comicSelect">
     {{range .Comics}}
-    <option value="{{.ID}}">{{.Name}}</option>
+    <option value="{{.ID}}" data-bio="{{js .Bio}}" data-notes="{{js .Notes}}" data-fee="{{.DefaultFee}}">{{.Name}}</option>
     {{end}}
   </select>
   <select name="role">
@@ -20,9 +20,10 @@
     <option value="HEADLINER">Headliner</option>
     <option value="COMIC">Comic</option>
   </select>
-  <input name="fee" placeholder="Fee">
+  <input name="fee" id="feeInput" placeholder="Fee">
   <button type="submit">Add</button>
 </form>
+<div id="comicInfo"></div>
 <h2>Run Sheet</h2>
 <form method="POST">
   <textarea name="notes" placeholder="Run Sheet/Notes">{{.Event.Notes}}</textarea>
@@ -43,5 +44,6 @@
   {{end}}
 </ul>
 <p><a href="/gig?id={{.Event.GigID}}">Back to Gig</a></p>
+<script src="/static/event.js"></script>
 </body>
 </html>
