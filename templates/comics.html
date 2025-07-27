@@ -6,19 +6,16 @@
   <link rel="stylesheet" href="/static/style.css">
 </head>
 <body>
-  <h1>Comics</h1>
-  <form method="POST">
-    <input name="name" placeholder="Name" required>
-    <input name="contact" placeholder="Contact">
-    <input name="fee" type="number" value="25" placeholder="Default Fee">
-    <input name="notes" placeholder="Notes">
-    <button type="submit">Add Comic</button>
-  </form>
-  <ul>
-    {{range .}}
-    <li>{{.Name}} – {{.Contact}} (${{.DefaultFee}}) {{.Notes}}</li>
-    {{end}}
-  </ul>
-  <p><a href="/">Back to events</a></p>
+<h1>Comics</h1>
+<form method="POST">
+  <input name="name" placeholder="Name" required>
+  <button type="submit">Add Comic</button>
+</form>
+<ul>
+  {{range .}}
+  <li>{{.Name}}</li>
+  {{end}}
+</ul>
+<p><a href="/">Back</a></p>
 </body>
 </html>
