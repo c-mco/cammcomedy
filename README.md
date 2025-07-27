@@ -9,3 +9,9 @@ go run .
 ```
 
 Open <http://localhost:8101> in your browser.
+
+Run the unit tests:
+
+```bash
+go test ./...
+```
