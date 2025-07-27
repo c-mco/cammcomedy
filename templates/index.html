@@ -2,45 +2,21 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>{{.Gig.Name}}</title>
+  <title>Gigs</title>
   <link rel="stylesheet" href="/static/style.css">
 </head>
 <body>
-  <h1>{{.Gig.Name}}</h1>
-  <p>{{.Gig.Description}}</p>
-  <h2>Add Event</h2>
-  <form method="POST">
-    <input name="date" type="date" required>
-    <input name="time" type="time" required>
-    <textarea name="timeline" placeholder="Timeline"></textarea>
-    <button type="submit">Add Event</button>
-  </form>
-  <h2>Events</h2>
-  <table>
-    <thead>
-      <tr>
-        <th>Event</th>
-        {{range .Headers}}
-        <th>{{.}}</th>
-        {{end}}
-      </tr>
-    </thead>
-    <tbody>
-      {{range .Events}}
-      <tr>
-        <td><a href="/event?id={{.ID}}">{{.Date}} {{.Time}}</a></td>
-        {{range $i := $.Indices}}
-          {{if lt $i (len .Comics)}}
-            {{$comic := index $.ComicMap (index .Comics $i).ComicID}}
-            <td>{{$comic.Name}}</td>
-          {{else}}
-            <td></td>
-          {{end}}
-        {{end}}
-      </tr>
-      {{end}}
-    </tbody>
-  </table>
-  <p><a href="/comics">Manage Comics</a></p>
+<h1>Gigs</h1>
+<form method="POST">
+  <input name="name" placeholder="Gig name" required>
+  <input name="recurrence" placeholder="Recurrence">
+  <button type="submit">Add Gig</button>
+</form>
+<ul>
+  {{range .}}
+  <li><a href="/gig?id={{.ID}}">{{.Name}}</a> {{.Recurrence}}</li>
+  {{end}}
+</ul>
+<p><a href="/comics">Manage Comics</a></p>
 </body>
 </html>

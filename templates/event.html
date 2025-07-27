@@ -6,27 +6,27 @@
   <link rel="stylesheet" href="/static/style.css">
 </head>
 <body>
-  <h1>{{.Event.Date}} {{.Event.Time}}</h1>
-  <p>{{.Event.Timeline}}</p>
-  <h2>Add Comic</h2>
-  <form method="POST">
-    <select name="comic_id">
-      {{range .Comics}}
-      <option value="{{.ID}}">{{.Name}}</option>
-      {{end}}
-    </select>
-    <input name="fee" type="number" value="25" placeholder="Fee">
-    <label><input type="checkbox" name="paid"> Paid</label>
-    <input name="notes" placeholder="Notes">
-    <button type="submit">Add Comic</button>
-  </form>
-  <h2>Lineup</h2>
-  <ul>
-    {{range .Event.Comics}}
-      {{ $comic := index $.ComicMap .ComicID }}
-      <li>{{$comic.Name}} – ${{.Fee}} {{if .Paid}}✅{{else}}💸{{end}} {{.Notes}}</li>
+<h1>{{.Event.Date}} {{.Event.Time}}</h1>
+<h2>Add Performer</h2>
+<form method="POST">
+  <select name="comic_id">
+    {{range .Comics}}
+    <option value="{{.ID}}">{{.Name}}</option>
     {{end}}
-  </ul>
-  <p><a href="/">Back</a> | <a href="/comics">Manage Comics</a></p>
+  </select>
+  <select name="role">
+    <option value="MC">MC</option>
+    <option value="HEADLINER">Headliner</option>
+    <option value="COMIC">Comic</option>
+  </select>
+  <button type="submit">Add</button>
+</form>
+<h2>Lineup</h2>
+<ul>
+  {{range .Lineup}}
+  <li>{{.Role}} - {{.Name}}</li>
+  {{end}}
+</ul>
+<p><a href="/gig?id={{.Event.GigID}}">Back to Gig</a></p>
 </body>
 </html>
