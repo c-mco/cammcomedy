@@ -28,6 +28,9 @@
   <li>{{.Role}} - {{.Name}}</li>
   {{end}}
 </ul>
+<form method="POST" onsubmit="return confirm('Delete this event?');">
+  <button type="submit" name="delete" value="1">Delete Event</button>
+</form>
 <p><a href="/gig?id={{.Event.GigID}}">Back to Gig</a></p>
 </body>
 </html>

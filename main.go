@@ -7,6 +7,7 @@ import (
 	"log"
 	"net/http"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -240,6 +241,23 @@ func eventHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if r.Method == http.MethodPost {
+		if r.FormValue("delete") != "" {
+			var gigID int
+			if err := db.QueryRow("SELECT gig_id FROM events WHERE id=?", id).Scan(&gigID); err != nil {
+				http.Error(w, err.Error(), 500)
+				return
+			}
+			if _, err := db.Exec("DELETE FROM lineup WHERE event_id=?", id); err != nil {
+				http.Error(w, err.Error(), 500)
+				return
+			}
+			if _, err := db.Exec("DELETE FROM events WHERE id=?", id); err != nil {
+				http.Error(w, err.Error(), 500)
+				return
+			}
+			http.Redirect(w, r, "/gig?id="+strconv.Itoa(gigID), http.StatusSeeOther)
+			return
+		}
 		comicID := r.FormValue("comic_id")
 		role := r.FormValue("role")
 		if comicID != "" && role != "" {
