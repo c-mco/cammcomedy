@@ -1,0 +1,15 @@
+cat <<EOF > .gitignore
+# Go stuff
+*.exe
+*.out
+*.test
+
+# IDE/editor junk
+.vscode/
+.idea/
+.DS_Store
+
+# Data
+data/comics.json
+EOF
+

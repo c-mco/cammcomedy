@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>cammcomedy – Booked Comics</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+  <h1>🎤 cammcomedy</h1>
+  <form method="POST">
+    <input name="name" placeholder="Name" required>
+    <input name="date" type="date" required>
+    <label><input name="paid" type="checkbox"> Paid</label>
+    <input name="notes" placeholder="Notes">
+    <button type="submit">Add Comic</button>
+  </form>
+  <ul>
+    {{range .}}
+    <li>
+      <strong>{{.Name}}</strong> ({{.Date}})
+      {{if .Paid}}✅ Paid{{else}}💸 Unpaid{{end}} – {{.Notes}}
+    </li>
+    {{end}}
+  </ul>
+</body>
+</html>
+
