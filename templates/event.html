@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Event {{.Event.Date}}</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+  <h1>{{.Event.Date}} {{.Event.Time}}</h1>
+  <p>{{.Event.Timeline}}</p>
+  <h2>Add Comic</h2>
+  <form method="POST">
+    <select name="comic_id">
+      {{range .Comics}}
+      <option value="{{.ID}}">{{.Name}}</option>
+      {{end}}
+    </select>
+    <input name="fee" type="number" value="25" placeholder="Fee">
+    <label><input type="checkbox" name="paid"> Paid</label>
+    <input name="notes" placeholder="Notes">
+    <button type="submit">Add Comic</button>
+  </form>
+  <h2>Lineup</h2>
+  <ul>
+    {{range .Event.Comics}}
+      {{ $comic := index $.ComicMap .ComicID }}
+      <li>{{$comic.Name}} – ${{.Fee}} {{if .Paid}}✅{{else}}💸{{end}} {{.Notes}}</li>
+    {{end}}
+  </ul>
+  <p><a href="/">Back</a> | <a href="/comics">Manage Comics</a></p>
+</body>
+</html>
