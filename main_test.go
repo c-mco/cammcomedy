@@ -27,6 +27,10 @@ func TestInitDBCreatesTables(t *testing.T) {
 			t.Errorf("expected table %s to exist: %v", tbl, err)
 		}
 	}
+
+	if _, err := db.Query("SELECT fee, paid FROM lineup LIMIT 1"); err != nil {
+		t.Errorf("expected columns fee and paid in lineup: %v", err)
+	}
 }
 
 func TestFetchComics(t *testing.T) {
