@@ -64,6 +64,8 @@ func initDB() error {
             comic_id INTEGER NOT NULL,
             role TEXT NOT NULL,
             position INTEGER,
+            fee TEXT,
+            paid INTEGER DEFAULT 0,
             FOREIGN KEY(event_id) REFERENCES events(id),
             FOREIGN KEY(comic_id) REFERENCES comics(id)
         );`)
@@ -77,6 +79,8 @@ func initDB() error {
 		"ALTER TABLE comics ADD COLUMN notes TEXT",
 		"ALTER TABLE comics ADD COLUMN contact TEXT",
 		"ALTER TABLE comics ADD COLUMN default_fee TEXT",
+		"ALTER TABLE lineup ADD COLUMN fee TEXT",
+		"ALTER TABLE lineup ADD COLUMN paid INTEGER DEFAULT 0",
 	}
 	for _, stmt := range alters {
 		if _, err := db.Exec(stmt); err != nil && !strings.Contains(err.Error(), "duplicate column") {
@@ -191,7 +195,9 @@ func gigHandler(w http.ResponseWriter, r *http.Request) {
 	var events []EventDisplay
 	for rows.Next() {
 		var e EventDisplay
-		rows.Scan(&e.ID, &e.Date, &e.Time, &e.Notes)
+		var notes sql.NullString
+		rows.Scan(&e.ID, &e.Date, &e.Time, &notes)
+		e.Notes = notes.String
 		e.GigID = gig.ID
 		// fetch lineup
 		lrows, _ := db.Query("SELECT comics.name, role, position FROM lineup JOIN comics ON lineup.comic_id = comics.id WHERE event_id=? ORDER BY role, position", e.ID)
@@ -250,15 +256,41 @@ func eventHandler(w http.ResponseWriter, r *http.Request) {
 			http.Redirect(w, r, r.URL.String(), http.StatusSeeOther)
 			return
 		}
+
+		if lid := r.FormValue("lineup_id"); lid != "" {
+			fee := r.FormValue("fee")
+			paid := 0
+			if r.FormValue("paid") != "" {
+				paid = 1
+			}
+			_, err := db.Exec("UPDATE lineup SET fee=?, paid=? WHERE id=?", fee, paid, lid)
+			if err != nil {
+				http.Error(w, err.Error(), 500)
+				return
+			}
+			http.Redirect(w, r, r.URL.String(), http.StatusSeeOther)
+			return
+		}
 		comicID := r.FormValue("comic_id")
 		role := r.FormValue("role")
+		fee := r.FormValue("fee")
 		if comicID != "" && role != "" {
+			// disallow multiple MCs or Headliners
+			if role == "MC" || role == "HEADLINER" {
+				var cnt int
+				db.QueryRow("SELECT COUNT(*) FROM lineup WHERE event_id=? AND role=?", id, role).Scan(&cnt)
+				if cnt > 0 {
+					http.Error(w, role+" already assigned", http.StatusBadRequest)
+					return
+				}
+			}
+
 			// find max position for comics
 			var pos sql.NullInt64
 			if role == "COMIC" {
 				db.QueryRow("SELECT COALESCE(MAX(position),0)+1 FROM lineup WHERE event_id=? AND role='COMIC'", id).Scan(&pos)
 			}
-			_, err := db.Exec("INSERT INTO lineup(event_id, comic_id, role, position) VALUES(?,?,?,?)", id, comicID, role, pos.Int64)
+			_, err := db.Exec("INSERT INTO lineup(event_id, comic_id, role, position, fee) VALUES(?,?,?,?,?)", id, comicID, role, pos.Int64, fee)
 			if err != nil {
 				http.Error(w, err.Error(), 500)
 				return
@@ -269,8 +301,11 @@ func eventHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var event Event
-	err := db.QueryRow("SELECT id, gig_id, date, time, timeline FROM events WHERE id=?", id).Scan(&event.ID, &event.GigID, &event.Date, &event.Time, &event.Notes)
+	var notes sql.NullString
+	err := db.QueryRow("SELECT id, gig_id, date, time, timeline FROM events WHERE id=?", id).Scan(&event.ID, &event.GigID, &event.Date, &event.Time, &notes)
+	event.Notes = notes.String
 	if err != nil {
+		log.Println("query error", err)
 		http.NotFound(w, r)
 		return
 	}
@@ -278,17 +313,21 @@ func eventHandler(w http.ResponseWriter, r *http.Request) {
 	comics, _ := fetchComics()
 
 	// fetch lineup
-	lrows, _ := db.Query("SELECT lineup.id, comics.name, role, position FROM lineup JOIN comics ON lineup.comic_id = comics.id WHERE event_id=? ORDER BY role, position", id)
+	lrows, _ := db.Query("SELECT lineup.id, comics.name, role, fee, paid, position FROM lineup JOIN comics ON lineup.comic_id = comics.id WHERE event_id=? ORDER BY role, position", id)
 	type LineupItem struct {
 		ID   int
 		Name string
 		Role string
+		Fee  string
+		Paid bool
 	}
 	var lineup []LineupItem
 	for lrows.Next() {
 		var li LineupItem
 		var pos sql.NullInt64
-		lrows.Scan(&li.ID, &li.Name, &li.Role, &pos)
+		var paid int
+		lrows.Scan(&li.ID, &li.Name, &li.Role, &li.Fee, &paid, &pos)
+		li.Paid = paid == 1
 		lineup = append(lineup, li)
 	}
 	lrows.Close()
