@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Edit Comic</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+<h1>Edit Comic</h1>
+<form method="POST">
+  <input name="name" placeholder="Name" value="{{.Name}}" required>
+  <input name="contact" placeholder="Contact" value="{{.Contact}}">
+  <input name="fee" placeholder="Default fee" value="{{.DefaultFee}}">
+  <textarea name="bio" placeholder="Bio">{{.Bio}}</textarea>
+  <textarea name="notes" placeholder="Notes">{{.Notes}}</textarea>
+  <button type="submit">Save</button>
+  <button type="submit" name="delete" value="1" onclick="return confirm('Delete this comic?');">Delete</button>
+</form>
+<p><a href="/comics">Back</a></p>
+</body>
+</html>

@@ -3,11 +3,11 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Event {{.Event.Date}}</title>
+  <title>{{.Event.Name}}</title>
   <link rel="stylesheet" href="/static/style.css">
 </head>
 <body>
-<h1>{{.Event.Date}} {{.Event.Time}}</h1>
+<h1>{{.Event.Name}}</h1>
 <h2>Add Performer</h2>
 <form method="POST" class="horizontal">
   <select name="comic_id">

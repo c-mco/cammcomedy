@@ -7,6 +7,8 @@ import (
 	"log"
 	"net/http"
 	"path/filepath"
+	"strings"
+	"time"
 )
 
 var templates = template.Must(template.ParseGlob("templates/*.html"))
@@ -26,6 +28,7 @@ func main() {
 	http.HandleFunc("/gig", gigHandler)
 	http.HandleFunc("/event", eventHandler)
 	http.HandleFunc("/comics", comicsHandler)
+	http.HandleFunc("/comic", comicHandler)
 	http.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.Dir("static"))))
 
 	log.Println("🚀 cammcomedy running at http://localhost:8101")
@@ -49,7 +52,11 @@ func initDB() error {
         );
         CREATE TABLE IF NOT EXISTS comics (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
-            name TEXT NOT NULL
+            name TEXT NOT NULL,
+            bio TEXT,
+            notes TEXT,
+            contact TEXT,
+            default_fee TEXT
         );
         CREATE TABLE IF NOT EXISTS lineup (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -60,7 +67,23 @@ func initDB() error {
             FOREIGN KEY(event_id) REFERENCES events(id),
             FOREIGN KEY(comic_id) REFERENCES comics(id)
         );`)
-	return err
+	if err != nil {
+		return err
+	}
+
+	// add new columns for existing installations
+	alters := []string{
+		"ALTER TABLE comics ADD COLUMN bio TEXT",
+		"ALTER TABLE comics ADD COLUMN notes TEXT",
+		"ALTER TABLE comics ADD COLUMN contact TEXT",
+		"ALTER TABLE comics ADD COLUMN default_fee TEXT",
+	}
+	for _, stmt := range alters {
+		if _, err := db.Exec(stmt); err != nil && !strings.Contains(err.Error(), "duplicate column") {
+			return err
+		}
+	}
+	return nil
 }
 
 type Gig struct {
@@ -77,9 +100,21 @@ type Event struct {
 	Timeline string
 }
 
+func (e Event) Name() string {
+	t, err := time.Parse("2006-01-02 15:04", e.Date+" "+e.Time)
+	if err != nil {
+		return e.Date + " " + e.Time
+	}
+	return t.Format("Jan 2, 2006 3:04 PM")
+}
+
 type Comic struct {
-	ID   int
-	Name string
+	ID         int
+	Name       string
+	Bio        string
+	Notes      string
+	Contact    string
+	DefaultFee string
 }
 
 type EventDisplay struct {
@@ -242,7 +277,7 @@ func eventHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func fetchComics() ([]Comic, error) {
-	rows, err := db.Query("SELECT id, name FROM comics ORDER BY name")
+	rows, err := db.Query("SELECT id, name, bio, notes, contact, default_fee FROM comics ORDER BY name")
 	if err != nil {
 		return nil, err
 	}
@@ -250,17 +285,28 @@ func fetchComics() ([]Comic, error) {
 	var comics []Comic
 	for rows.Next() {
 		var c Comic
-		rows.Scan(&c.ID, &c.Name)
+		rows.Scan(&c.ID, &c.Name, &c.Bio, &c.Notes, &c.Contact, &c.DefaultFee)
 		comics = append(comics, c)
 	}
 	return comics, nil
 }
 
+func fetchComic(id string) (Comic, error) {
+	var c Comic
+	err := db.QueryRow("SELECT id, name, bio, notes, contact, default_fee FROM comics WHERE id=?", id).Scan(
+		&c.ID, &c.Name, &c.Bio, &c.Notes, &c.Contact, &c.DefaultFee)
+	return c, err
+}
+
 func comicsHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method == http.MethodPost {
 		name := r.FormValue("name")
+		bio := r.FormValue("bio")
+		notes := r.FormValue("notes")
+		contact := r.FormValue("contact")
+		fee := r.FormValue("fee")
 		if name != "" {
-			_, err := db.Exec("INSERT INTO comics(name) VALUES(?)", name)
+			_, err := db.Exec("INSERT INTO comics(name, bio, notes, contact, default_fee) VALUES(?,?,?,?,?)", name, bio, notes, contact, fee)
 			if err != nil {
 				http.Error(w, err.Error(), 500)
 				return
@@ -271,4 +317,40 @@ func comicsHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	comics, _ := fetchComics()
 	templates.ExecuteTemplate(w, "comics.html", comics)
+}
+
+func comicHandler(w http.ResponseWriter, r *http.Request) {
+	id := r.URL.Query().Get("id")
+	if id == "" {
+		http.NotFound(w, r)
+		return
+	}
+	if r.Method == http.MethodPost {
+		if r.FormValue("delete") != "" {
+			if _, err := db.Exec("DELETE FROM comics WHERE id=?", id); err != nil {
+				http.Error(w, err.Error(), 500)
+				return
+			}
+			http.Redirect(w, r, "/comics", http.StatusSeeOther)
+			return
+		}
+		name := r.FormValue("name")
+		bio := r.FormValue("bio")
+		notes := r.FormValue("notes")
+		contact := r.FormValue("contact")
+		fee := r.FormValue("fee")
+		_, err := db.Exec("UPDATE comics SET name=?, bio=?, notes=?, contact=?, default_fee=? WHERE id=?", name, bio, notes, contact, fee, id)
+		if err != nil {
+			http.Error(w, err.Error(), 500)
+			return
+		}
+		http.Redirect(w, r, "/comics", http.StatusSeeOther)
+		return
+	}
+	comic, err := fetchComic(id)
+	if err != nil {
+		http.NotFound(w, r)
+		return
+	}
+	templates.ExecuteTemplate(w, "comic.html", comic)
 }
