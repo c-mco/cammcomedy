@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>{{.Gig.Name}}</title>
   <link rel="stylesheet" href="/static/style.css">
 </head>
@@ -9,7 +10,7 @@
 <h1>{{.Gig.Name}}</h1>
 <p>{{.Gig.Recurrence}}</p>
 <h2>Add Event</h2>
-<form method="POST">
+<form method="POST" class="horizontal">
   <input name="date" type="date" required>
   <input name="time" type="time" required>
   <button type="submit">Add Event</button>
