@@ -22,6 +22,11 @@
   </select>
   <button type="submit">Add</button>
 </form>
+<h2>Run Sheet</h2>
+<form method="POST">
+  <textarea name="notes" placeholder="Run Sheet/Notes">{{.Event.Notes}}</textarea>
+  <button type="submit" name="update_notes" value="1">Save</button>
+</form>
 <h2>Lineup</h2>
 <ul>
   {{range .Lineup}}

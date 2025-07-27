@@ -93,11 +93,11 @@ type Gig struct {
 }
 
 type Event struct {
-	ID       int
-	GigID    int
-	Date     string
-	Time     string
-	Timeline string
+	ID    int
+	GigID int
+	Date  string
+	Time  string
+	Notes string
 }
 
 func (e Event) Name() string {
@@ -191,7 +191,7 @@ func gigHandler(w http.ResponseWriter, r *http.Request) {
 	var events []EventDisplay
 	for rows.Next() {
 		var e EventDisplay
-		rows.Scan(&e.ID, &e.Date, &e.Time, &e.Timeline)
+		rows.Scan(&e.ID, &e.Date, &e.Time, &e.Notes)
 		e.GigID = gig.ID
 		// fetch lineup
 		lrows, _ := db.Query("SELECT comics.name, role, position FROM lineup JOIN comics ON lineup.comic_id = comics.id WHERE event_id=? ORDER BY role, position", e.ID)
@@ -240,6 +240,16 @@ func eventHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if r.Method == http.MethodPost {
+		if r.FormValue("update_notes") != "" {
+			notes := r.FormValue("notes")
+			_, err := db.Exec("UPDATE events SET timeline=? WHERE id=?", notes, id)
+			if err != nil {
+				http.Error(w, err.Error(), 500)
+				return
+			}
+			http.Redirect(w, r, r.URL.String(), http.StatusSeeOther)
+			return
+		}
 		comicID := r.FormValue("comic_id")
 		role := r.FormValue("role")
 		if comicID != "" && role != "" {
@@ -259,7 +269,7 @@ func eventHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var event Event
-	err := db.QueryRow("SELECT id, gig_id, date, time FROM events WHERE id=?", id).Scan(&event.ID, &event.GigID, &event.Date, &event.Time)
+	err := db.QueryRow("SELECT id, gig_id, date, time, timeline FROM events WHERE id=?", id).Scan(&event.ID, &event.GigID, &event.Date, &event.Time, &event.Notes)
 	if err != nil {
 		http.NotFound(w, r)
 		return

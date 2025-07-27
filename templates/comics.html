@@ -18,7 +18,17 @@
 </form>
 <ul>
   {{range .}}
-  <li><a href="/comic?id={{.ID}}">{{.Name}}</a></li>
+  <li>
+    <details>
+      <summary><a href="/comic?id={{.ID}}">{{.Name}}</a></summary>
+      {{if .Bio}}
+      <p><strong>Bio:</strong> {{.Bio}}</p>
+      {{end}}
+      {{if .Notes}}
+      <p><strong>Notes:</strong> {{.Notes}}</p>
+      {{end}}
+    </details>
+  </li>
   {{end}}
 </ul>
 <p><a href="/">Back</a></p>
