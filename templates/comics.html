@@ -8,13 +8,17 @@
 </head>
 <body>
 <h1>Comics</h1>
-<form method="POST" class="horizontal">
+<form method="POST">
   <input name="name" placeholder="Name" required>
+  <input name="contact" placeholder="Contact">
+  <input name="fee" placeholder="Default fee">
+  <textarea name="bio" placeholder="Bio"></textarea>
+  <textarea name="notes" placeholder="Notes"></textarea>
   <button type="submit">Add Comic</button>
 </form>
 <ul>
   {{range .}}
-  <li>{{.Name}}</li>
+  <li><a href="/comic?id={{.ID}}">{{.Name}}</a></li>
   {{end}}
 </ul>
 <p><a href="/">Back</a></p>
