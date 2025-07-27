@@ -20,14 +20,22 @@
     <option value="HEADLINER">Headliner</option>
     <option value="COMIC">Comic</option>
   </select>
-  <input name="fee_override" id="feeOverride" placeholder="Override fee">
+  <input name="fee" id="feeInput" placeholder="Fee">
   <button type="submit">Add</button>
 </form>
 <div id="comicInfo"></div>
 <h2>Lineup</h2>
 <ul>
   {{range .Lineup}}
-  <li>{{.Role}} - {{.Name}}{{if .Fee}} (${{.Fee}}){{end}}</li>
+  <li>
+    <form method="POST" class="horizontal">
+      <span>{{.Role}} - {{.Name}}</span>
+      <input name="fee" value="{{.Fee}}" placeholder="Fee">
+      <label><input type="checkbox" name="paid" value="1" {{if .Paid}}checked{{end}}> Paid</label>
+      <input type="hidden" name="lineup_id" value="{{.ID}}">
+      <button type="submit">Save</button>
+    </form>
+  </li>
   {{end}}
 </ul>
 <p><a href="/gig?id={{.Event.GigID}}">Back to Gig</a></p>

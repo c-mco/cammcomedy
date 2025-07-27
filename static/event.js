@@ -1,8 +1,8 @@
 (function(){
   const select = document.getElementById('comicSelect');
   const info = document.getElementById('comicInfo');
-  const feeInput = document.getElementById('feeOverride');
-  if(!select || !info) return;
+  const feeInput = document.getElementById('feeInput');
+  if(!select || !info || !feeInput) return;
   function update(){
     const opt = select.options[select.selectedIndex];
     const bio = opt.dataset.bio || '';
