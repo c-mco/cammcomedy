@@ -263,6 +263,16 @@ func eventHandler(w http.ResponseWriter, r *http.Request) {
 		role := r.FormValue("role")
 		fee := r.FormValue("fee")
 		if comicID != "" && role != "" {
+			// disallow multiple MCs or Headliners
+			if role == "MC" || role == "HEADLINER" {
+				var cnt int
+				db.QueryRow("SELECT COUNT(*) FROM lineup WHERE event_id=? AND role=?", id, role).Scan(&cnt)
+				if cnt > 0 {
+					http.Error(w, role+" already assigned", http.StatusBadRequest)
+					return
+				}
+			}
+
 			// find max position for comics
 			var pos sql.NullInt64
 			if role == "COMIC" {
