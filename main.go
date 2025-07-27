@@ -64,6 +64,7 @@ func initDB() error {
             comic_id INTEGER NOT NULL,
             role TEXT NOT NULL,
             position INTEGER,
+            fee_override TEXT,
             FOREIGN KEY(event_id) REFERENCES events(id),
             FOREIGN KEY(comic_id) REFERENCES comics(id)
         );`)
@@ -77,6 +78,7 @@ func initDB() error {
 		"ALTER TABLE comics ADD COLUMN notes TEXT",
 		"ALTER TABLE comics ADD COLUMN contact TEXT",
 		"ALTER TABLE comics ADD COLUMN default_fee TEXT",
+		"ALTER TABLE lineup ADD COLUMN fee_override TEXT",
 	}
 	for _, stmt := range alters {
 		if _, err := db.Exec(stmt); err != nil && !strings.Contains(err.Error(), "duplicate column") {
@@ -242,13 +244,14 @@ func eventHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method == http.MethodPost {
 		comicID := r.FormValue("comic_id")
 		role := r.FormValue("role")
+		feeOverride := r.FormValue("fee_override")
 		if comicID != "" && role != "" {
 			// find max position for comics
 			var pos sql.NullInt64
 			if role == "COMIC" {
 				db.QueryRow("SELECT COALESCE(MAX(position),0)+1 FROM lineup WHERE event_id=? AND role='COMIC'", id).Scan(&pos)
 			}
-			_, err := db.Exec("INSERT INTO lineup(event_id, comic_id, role, position) VALUES(?,?,?,?)", id, comicID, role, pos.Int64)
+			_, err := db.Exec("INSERT INTO lineup(event_id, comic_id, role, position, fee_override) VALUES(?,?,?,?,?)", id, comicID, role, pos.Int64, feeOverride)
 			if err != nil {
 				http.Error(w, err.Error(), 500)
 				return
@@ -268,17 +271,18 @@ func eventHandler(w http.ResponseWriter, r *http.Request) {
 	comics, _ := fetchComics()
 
 	// fetch lineup
-	lrows, _ := db.Query("SELECT lineup.id, comics.name, role, position FROM lineup JOIN comics ON lineup.comic_id = comics.id WHERE event_id=? ORDER BY role, position", id)
+	lrows, _ := db.Query("SELECT lineup.id, comics.name, role, position, fee_override FROM lineup JOIN comics ON lineup.comic_id = comics.id WHERE event_id=? ORDER BY role, position", id)
 	type LineupItem struct {
 		ID   int
 		Name string
 		Role string
+		Fee  string
 	}
 	var lineup []LineupItem
 	for lrows.Next() {
 		var li LineupItem
 		var pos sql.NullInt64
-		lrows.Scan(&li.ID, &li.Name, &li.Role, &pos)
+		lrows.Scan(&li.ID, &li.Name, &li.Role, &pos, &li.Fee)
 		lineup = append(lineup, li)
 	}
 	lrows.Close()
