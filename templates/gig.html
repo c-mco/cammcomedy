@@ -18,7 +18,18 @@
 <h2>Events</h2>
 <table>
   <thead>
-    <tr><th>Date</th><th>MC</th><th>Headliner</th><th>Comics</th></tr>
+    <tr>
+      <th>Date</th>
+      <th>MC</th>
+      <th>Headliner</th>
+      <th>Comic 1</th>
+      <th>Comic 2</th>
+      <th>Comic 3</th>
+      <th>Comic 4</th>
+      <th>Comic 5</th>
+      <th>Comic 6</th>
+      <th>Notes</th>
+    </tr>
   </thead>
   <tbody>
     {{range .Events}}
@@ -26,7 +37,13 @@
       <td><a href="/event?id={{.ID}}">{{.Date}} {{.Time}}</a></td>
       <td>{{.MC}}</td>
       <td>{{.Headliner}}</td>
-      <td>{{range $i,$c := .Comics}}{{if $i}}, {{end}}{{$c}}{{end}}</td>
+      <td>{{index .Comics 0}}</td>
+      <td>{{index .Comics 1}}</td>
+      <td>{{index .Comics 2}}</td>
+      <td>{{index .Comics 3}}</td>
+      <td>{{index .Comics 4}}</td>
+      <td>{{index .Comics 5}}</td>
+      <td>{{.Timeline}}</td>
     </tr>
     {{end}}
   </tbody>

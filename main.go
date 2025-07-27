@@ -86,7 +86,7 @@ type EventDisplay struct {
 	Event
 	MC        string
 	Headliner string
-	Comics    []string
+	Comics    [6]string
 }
 
 func gigsHandler(w http.ResponseWriter, r *http.Request) {
@@ -147,7 +147,7 @@ func gigHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// fetch events
-	rows, err := db.Query("SELECT id, date, time FROM events WHERE gig_id=? ORDER BY date", id)
+	rows, err := db.Query("SELECT id, date, time, timeline FROM events WHERE gig_id=? ORDER BY date", id)
 	if err != nil {
 		http.Error(w, err.Error(), 500)
 		return
@@ -156,21 +156,35 @@ func gigHandler(w http.ResponseWriter, r *http.Request) {
 	var events []EventDisplay
 	for rows.Next() {
 		var e EventDisplay
-		rows.Scan(&e.ID, &e.Date, &e.Time)
+		rows.Scan(&e.ID, &e.Date, &e.Time, &e.Timeline)
 		e.GigID = gig.ID
 		// fetch lineup
-		lrows, _ := db.Query("SELECT comics.name, role FROM lineup JOIN comics ON lineup.comic_id = comics.id WHERE event_id=?", e.ID)
-		var comics []string
+		lrows, _ := db.Query("SELECT comics.name, role, position FROM lineup JOIN comics ON lineup.comic_id = comics.id WHERE event_id=? ORDER BY role, position", e.ID)
+		var comics [6]string
 		for lrows.Next() {
 			var name, role string
-			lrows.Scan(&name, &role)
+			var pos sql.NullInt64
+			lrows.Scan(&name, &role, &pos)
 			switch role {
 			case "MC":
 				e.MC = name
 			case "HEADLINER":
 				e.Headliner = name
 			default:
-				comics = append(comics, name)
+				idx := 0
+				if pos.Valid {
+					idx = int(pos.Int64) - 1
+				} else {
+					for i, c := range comics {
+						if c == "" {
+							idx = i
+							break
+						}
+					}
+				}
+				if idx >= 0 && idx < len(comics) {
+					comics[idx] = name
+				}
 			}
 		}
 		lrows.Close()
