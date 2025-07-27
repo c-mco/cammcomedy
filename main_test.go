@@ -33,7 +33,7 @@ func TestFetchComics(t *testing.T) {
 	setupTestDB(t)
 
 	// empty initially
-	comics, err := fetchComics()
+	comics, err := fetchComics("")
 	if err != nil {
 		t.Fatalf("fetchComics failed: %v", err)
 	}
@@ -46,7 +46,7 @@ func TestFetchComics(t *testing.T) {
 		t.Fatalf("insert comics: %v", err)
 	}
 
-	comics, err = fetchComics()
+	comics, err = fetchComics("")
 	if err != nil {
 		t.Fatalf("fetchComics failed: %v", err)
 	}

@@ -64,6 +64,7 @@ func initDB() error {
             comic_id INTEGER NOT NULL,
             role TEXT NOT NULL,
             position INTEGER,
+            paid INTEGER DEFAULT 0,
             FOREIGN KEY(event_id) REFERENCES events(id),
             FOREIGN KEY(comic_id) REFERENCES comics(id)
         );`)
@@ -77,6 +78,7 @@ func initDB() error {
 		"ALTER TABLE comics ADD COLUMN notes TEXT",
 		"ALTER TABLE comics ADD COLUMN contact TEXT",
 		"ALTER TABLE comics ADD COLUMN default_fee TEXT",
+		"ALTER TABLE lineup ADD COLUMN paid INTEGER DEFAULT 0",
 	}
 	for _, stmt := range alters {
 		if _, err := db.Exec(stmt); err != nil && !strings.Contains(err.Error(), "duplicate column") {
@@ -181,8 +183,24 @@ func gigHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// fetch events
-	rows, err := db.Query("SELECT id, date, time, timeline FROM events WHERE gig_id=? ORDER BY date", id)
+	// fetch events with optional filters and sorting
+	query := "SELECT id, date, time, timeline FROM events WHERE gig_id=?"
+	args := []any{id}
+	if r.URL.Query().Get("upcoming") != "" {
+		query += " AND date >= ?"
+		args = append(args, time.Now().Format("2006-01-02"))
+	}
+	if r.URL.Query().Get("unpaid") != "" {
+		query += " AND id IN (SELECT event_id FROM lineup WHERE paid=0)"
+	}
+	sort := r.URL.Query().Get("sort")
+	switch sort {
+	case "date_desc":
+		query += " ORDER BY date DESC"
+	default:
+		query += " ORDER BY date"
+	}
+	rows, err := db.Query(query, args...)
 	if err != nil {
 		http.Error(w, err.Error(), 500)
 		return
@@ -230,7 +248,8 @@ func gigHandler(w http.ResponseWriter, r *http.Request) {
 	templates.ExecuteTemplate(w, "gig.html", struct {
 		Gig    Gig
 		Events []EventDisplay
-	}{gig, events})
+		Sort   string
+	}{gig, events, sort})
 }
 
 func eventHandler(w http.ResponseWriter, r *http.Request) {
@@ -240,6 +259,15 @@ func eventHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if r.Method == http.MethodPost {
+		if lid := r.FormValue("lineup_id"); lid != "" {
+			paid := r.FormValue("paid") == "1"
+			if _, err := db.Exec("UPDATE lineup SET paid=? WHERE id=?", paid, lid); err != nil {
+				http.Error(w, err.Error(), 500)
+				return
+			}
+			http.Redirect(w, r, r.URL.String(), http.StatusSeeOther)
+			return
+		}
 		comicID := r.FormValue("comic_id")
 		role := r.FormValue("role")
 		if comicID != "" && role != "" {
@@ -265,20 +293,21 @@ func eventHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	comics, _ := fetchComics()
+	comics, _ := fetchComics("")
 
 	// fetch lineup
-	lrows, _ := db.Query("SELECT lineup.id, comics.name, role, position FROM lineup JOIN comics ON lineup.comic_id = comics.id WHERE event_id=? ORDER BY role, position", id)
+	lrows, _ := db.Query("SELECT lineup.id, comics.name, role, position, paid FROM lineup JOIN comics ON lineup.comic_id = comics.id WHERE event_id=? ORDER BY role, position", id)
 	type LineupItem struct {
 		ID   int
 		Name string
 		Role string
+		Paid bool
 	}
 	var lineup []LineupItem
 	for lrows.Next() {
 		var li LineupItem
 		var pos sql.NullInt64
-		lrows.Scan(&li.ID, &li.Name, &li.Role, &pos)
+		lrows.Scan(&li.ID, &li.Name, &li.Role, &pos, &li.Paid)
 		lineup = append(lineup, li)
 	}
 	lrows.Close()
@@ -290,8 +319,15 @@ func eventHandler(w http.ResponseWriter, r *http.Request) {
 	}{event, comics, lineup})
 }
 
-func fetchComics() ([]Comic, error) {
-	rows, err := db.Query("SELECT id, name, bio, notes, contact, default_fee FROM comics ORDER BY name")
+func fetchComics(search string) ([]Comic, error) {
+	query := "SELECT id, name, bio, notes, contact, default_fee FROM comics"
+	var args []any
+	if search != "" {
+		query += " WHERE name LIKE ?"
+		args = append(args, "%"+search+"%")
+	}
+	query += " ORDER BY name"
+	rows, err := db.Query(query, args...)
 	if err != nil {
 		return nil, err
 	}
@@ -329,8 +365,12 @@ func comicsHandler(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, "/comics", http.StatusSeeOther)
 		return
 	}
-	comics, _ := fetchComics()
-	templates.ExecuteTemplate(w, "comics.html", comics)
+	search := r.URL.Query().Get("q")
+	comics, _ := fetchComics(search)
+	templates.ExecuteTemplate(w, "comics.html", struct {
+		Comics []Comic
+		Query  string
+	}{comics, search})
 }
 
 func comicHandler(w http.ResponseWriter, r *http.Request) {

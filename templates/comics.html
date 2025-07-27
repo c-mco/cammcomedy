@@ -8,6 +8,11 @@
 </head>
 <body>
 <h1>Comics</h1>
+<form method="GET" class="horizontal">
+  <input name="q" placeholder="Search" value="{{.Query}}">
+  <button type="submit">Search</button>
+  <a href="/comics">Clear</a>
+</form>
 <form method="POST">
   <input name="name" placeholder="Name" required>
   <input name="contact" placeholder="Contact">
@@ -17,7 +22,7 @@
   <button type="submit">Add Comic</button>
 </form>
 <ul>
-  {{range .}}
+  {{range .Comics}}
   <li><a href="/comic?id={{.ID}}">{{.Name}}</a></li>
   {{end}}
 </ul>

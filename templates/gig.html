@@ -16,10 +16,15 @@
   <button type="submit">Add Event</button>
 </form>
 <h2>Events</h2>
+<p>
+  <a href="?upcoming=1">Upcoming</a> |
+  <a href="?">All</a> |
+  <a href="?unpaid=1">Unpaid</a>
+</p>
 <table>
   <thead>
     <tr>
-      <th>Date</th>
+      <th><a href="?sort={{if eq .Sort "date"}}date_desc{{else}}date{{end}}">Date</a></th>
       <th>MC</th>
       <th>Headliner</th>
       <th>Comic 1</th>

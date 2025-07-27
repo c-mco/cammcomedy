@@ -25,7 +25,19 @@
 <h2>Lineup</h2>
 <ul>
   {{range .Lineup}}
-  <li>{{.Role}} - {{.Name}}</li>
+  <li>
+    {{.Role}} - {{.Name}}
+    <form method="POST" style="display:inline">
+      <input type="hidden" name="lineup_id" value="{{.ID}}">
+      {{if .Paid}}
+      <input type="hidden" name="paid" value="0">
+      <button type="submit">Unmark Paid</button>
+      {{else}}
+      <input type="hidden" name="paid" value="1">
+      <button type="submit">Mark Paid</button>
+      {{end}}
+    </form>
+  </li>
   {{end}}
 </ul>
 <p><a href="/gig?id={{.Event.GigID}}">Back to Gig</a></p>
